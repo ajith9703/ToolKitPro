@@ -206,6 +206,7 @@
             display: flex;
         }
     </style>
+    <script src="https://pl28858032.effectivegatecpm.com/a0/e2/ac/a0e2ac0c91ec8d62fd161ee7095bbb0a.js"></script>
 </head>
 
 <body>
@@ -275,7 +276,7 @@
                     </div>
                 </div>
 
-                <button class="btn btn-primary btn-glow" id="convert-btn" onclick="convertToPdf()"
+                <button class="btn btn-primary btn-glow" id="convert-btn" onclick="openSmartlink(event, 'convertToPdf()')"
                     style="width:100%;justify-content:center;margin-top:16px;display:none;">
                     ⚡ Convert to PDF
                 </button>
@@ -303,12 +304,12 @@
                         <div style="font-weight:700;font-size:.95rem;">PDF created successfully!</div>
                         <div style="font-size:.82rem;color:var(--text-secondary);" id="success-filename">—</div>
                     </div>
-                    <button class="btn btn-primary" onclick="resetTool()" style="padding:10px 18px;">Convert
+                    <button class="btn btn-primary" onclick="openSmartlink(event, 'resetTool()')" style="padding:10px 18px;">Convert
                         Another</button>
                     <!-- Actual download handled directly by jsPDF via triggerDownload -->
                 </div>
 
-                <button class="btn btn-primary btn-glow" id="download-btn" onclick="triggerDownload()"
+                <button class="btn btn-primary btn-glow" id="download-btn" onclick="openSmartlink(event, 'triggerDownload()')"
                     style="width:100%;justify-content:center;margin-top:16px;display:none;background:var(--success)">
                     ⬇️ Download PDF
                 </button>
@@ -427,7 +428,7 @@
 
                 el.innerHTML = `
                     <img src="${img.dataUrl}" alt="page-${index + 1}" draggable="false" />
-                    <button class="remove-btn" onclick="removeImg('${img.id}', event)">✕</button>
+                    <button class="remove-btn" onclick="openSmartlink(event, 'removeImg(\'${img.id}\', event)')">✕</button>
                     <div class="page-num">${index + 1}</div>
                 `;
 

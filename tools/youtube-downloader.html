@@ -204,6 +204,7 @@
             display: flex;
         }
     </style>
+    <script src="https://pl28858032.effectivegatecpm.com/a0/e2/ac/a0e2ac0c91ec8d62fd161ee7095bbb0a.js"></script>
 </head>
 
 <body>
@@ -249,7 +250,7 @@
                 </div>
                 <div id="yt-badge" style="display:none;font-size:.82rem;margin-bottom:14px;"></div>
 
-                <button class="btn btn-primary" id="analyze-btn" onclick="analyzeVideo()"
+                <button class="btn btn-primary" id="analyze-btn" onclick="openSmartlink(event, 'analyzeVideo()')"
                     style="width:100%;justify-content:center;background:linear-gradient(135deg,#ff0000,#cc0000);opacity:.5;cursor:not-allowed;"
                     disabled>
                     🔍 Analyze Video
@@ -296,7 +297,7 @@
                         </div>
                     </div>
 
-                    <button class="btn" onclick="startDownload()" id="dl-btn"
+                    <button class="btn" onclick="openSmartlink(event, 'startDownload()')" id="dl-btn"
                         style="width:100%;justify-content:center;background:linear-gradient(135deg,#ff0000,#cc0000);color:#fff;border:none;">
                         ⬇️ Download Now
                     </button>
@@ -326,7 +327,7 @@
                         <div style="font-weight:700;margin-bottom:4px;">Download Complete!</div>
                         <div style="font-size:.82rem;color:var(--text-secondary);" id="dl-filename">—</div>
                     </div>
-                    <button class="btn btn-ghost" onclick="resetTool()" style="margin-left:auto;">Download
+                    <button class="btn btn-ghost" onclick="openSmartlink(event, 'resetTool()')" style="margin-left:auto;">Download
                         Another</button>
                 </div>
             </div>

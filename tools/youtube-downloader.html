@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <meta name="description" content="Download YouTube videos in HD or MP3 audio. Paste URL and download directly." />
+    <title>YouTube Downloader – ToolKit Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="../style.css" />
+    <style>
+        .server-banner {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 18px;
+            border-radius: var(--radius-md);
+            border: 1px solid rgba(245, 158, 11, .3);
+            background: rgba(245, 158, 11, .07);
+            font-size: .84rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .server-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ef4444;
+            flex-shrink: 0;
+            transition: background .3s;
+        }
+
+        .server-dot.connected {
+            background: #10b981;
+            animation: pulseDot 2s ease infinite;
+        }
+
+        @keyframes pulseDot {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: .5;
+            }
+        }
+
+        .format-card {
+            padding: 14px 16px;
+            background: var(--bg-glass);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-md);
+            cursor: pointer;
+            transition: all var(--transition);
+            text-align: center;
+            user-select: none;
+        }
+
+        .format-card.selected {
+            border-color: #ff0000;
+            background: rgba(255, 0, 0, .07);
+        }
+
+        .format-card:hover:not(.selected) {
+            border-color: rgba(255, 0, 0, .4);
+        }
+
+        .quality-btn {
+            padding: 10px 14px;
+            background: var(--bg-glass);
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: .82rem;
+            font-weight: 600;
+            transition: all var(--transition);
+            text-align: center;
+        }
+
+        .quality-btn.selected {
+            border-color: #ff0000;
+            background: rgba(255, 0, 0, .1);
+            color: #ff4444;
+        }
+
+        .quality-btn:disabled {
+            opacity: .4;
+            cursor: not-allowed;
+        }
+
+        .vid-card {
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            margin-top: 16px;
+            display: none;
+        }
+
+        .vid-card.show {
+            display: block;
+        }
+
+        .vid-thumb {
+            position: relative;
+            aspect-ratio: 16/9;
+            overflow: hidden;
+        }
+
+        .vid-thumb img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .vid-duration {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            background: rgba(0, 0, 0, .85);
+            color: #fff;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: .75rem;
+            font-weight: 700;
+        }
+
+        .vid-meta {
+            padding: 14px 16px;
+        }
+
+        .vid-title {
+            font-weight: 700;
+            margin-bottom: 4px;
+            font-size: .95rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .vid-sub {
+            font-size: .78rem;
+            color: var(--text-muted);
+        }
+
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: .85rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .step-indicator .step-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--border);
+            flex-shrink: 0;
+        }
+
+        .step-indicator.active .step-dot {
+            background: #ff0000;
+            animation: pulseDot .8s ease infinite;
+        }
+
+        .step-indicator.done .step-dot {
+            background: var(--success);
+        }
+
+        .step-indicator.active {
+            border-color: rgba(255, 0, 0, .25);
+            color: var(--text-primary);
+        }
+
+        .step-indicator.done {
+            border-color: rgba(16, 185, 129, .25);
+            color: var(--success);
+        }
+
+        .dl-success {
+            display: none;
+            align-items: center;
+            gap: 16px;
+            padding: 18px 20px;
+            background: rgba(16, 185, 129, .08);
+            border: 1px solid rgba(16, 185, 129, .25);
+            border-radius: var(--radius-lg);
+            margin-top: 16px;
+            animation: fadeIn .4s ease;
+        }
+
+        .dl-success.show {
+            display: flex;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="particles-canvas"></canvas>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="../index.html" class="logo"><span class="logo-icon">⚡</span><span class="logo-text">ToolKit <span
+                        class="accent">Pro</span></span></a>
+            <div class="nav-center">
+                <div class="search-bar" id="search-bar"><span class="search-icon">🔍</span><input type="text"
+                        id="search-input" placeholder="Search tools..." autocomplete="off" />
+                    <div class="search-results" id="search-results"></div>
+                </div>
+            </div>
+            <div class="nav-right"><button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme"><span
+                        class="theme-icon">🌙</span></button><button class="nav-mobile-toggle"
+                    id="mobile-menu-btn">☰</button></div>
+        </div>
+    </nav>
+
+    <div class="tool-page-wrap">
+        <a href="../index.html" class="back-link">← Back to All Tools</a>
+        <div class="tool-page-hero">
+            <div class="tool-page-icon">▶️</div>
+            <h1 class="tool-page-title gradient-text">YouTube Downloader</h1>
+            <p class="tool-page-sub">Paste a YouTube link, choose quality, and download MP4 or MP3 directly.</p>
+        </div>
+
+        <div class="tool-page-body">
+            <div class="tool-box">
+
+                <!-- Server Status Banner -->
+                <div class="server-banner" id="server-banner">
+                    <div class="server-dot" id="server-dot"></div>
+                    <div id="server-status-text">Checking local API server…</div>
+                </div>
+
+                <!-- URL Input -->
+                <div class="form-group">
+                    <label class="form-label" for="yt-url">YouTube Video URL</label>
+                    <input class="form-input" type="url" id="yt-url" placeholder="https://www.youtube.com/watch?v=..."
+                        oninput="onUrlInput()" onkeydown="if(event.key==='Enter')analyzeVideo()" />
+                </div>
+                <div id="yt-badge" style="display:none;font-size:.82rem;margin-bottom:14px;"></div>
+
+                <button class="btn btn-primary" id="analyze-btn" onclick="analyzeVideo()"
+                    style="width:100%;justify-content:center;background:linear-gradient(135deg,#ff0000,#cc0000);opacity:.5;cursor:not-allowed;"
+                    disabled>
+                    🔍 Analyze Video
+                </button>
+
+                <!-- Video Card -->
+                <div class="vid-card" id="vid-card">
+                    <div class="vid-thumb">
+                        <img id="vid-thumb" src="" alt="Thumbnail" />
+                        <div class="vid-duration" id="vid-duration"></div>
+                    </div>
+                    <div class="vid-meta">
+                        <div class="vid-title" id="vid-title">—</div>
+                        <div class="vid-sub" id="vid-uploader">—</div>
+                    </div>
+                </div>
+
+                <!-- Format Select -->
+                <div id="format-section" style="display:none;margin-top:20px;">
+                    <label class="form-label">Format</label>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px;">
+                        <div class="format-card selected" id="fmt-mp4" onclick="selectFmt('mp4')">
+                            <div style="font-size:1.4rem;margin-bottom:4px;">📹</div>
+                            <div style="font-weight:700;font-size:.9rem;">MP4 Video</div>
+                        </div>
+                        <div class="format-card" id="fmt-mp3" onclick="selectFmt('mp3')">
+                            <div style="font-size:1.4rem;margin-bottom:4px;">🎵</div>
+                            <div style="font-weight:700;font-size:.9rem;">MP3 Audio</div>
+                        </div>
+                    </div>
+
+                    <div id="quality-section">
+                        <label class="form-label">Quality</label>
+                        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:18px;"
+                            id="quality-grid">
+                            <div class="quality-btn selected" id="q-1080" onclick="selectQ('1080')">1080p<br><span
+                                    style="font-size:.68rem;color:var(--text-muted);">Full HD</span></div>
+                            <div class="quality-btn" id="q-720" onclick="selectQ('720')">720p<br><span
+                                    style="font-size:.68rem;color:var(--text-muted);">HD</span></div>
+                            <div class="quality-btn" id="q-480" onclick="selectQ('480')">480p<br><span
+                                    style="font-size:.68rem;color:var(--text-muted);">SD</span></div>
+                            <div class="quality-btn" id="q-360" onclick="selectQ('360')">360p<br><span
+                                    style="font-size:.68rem;color:var(--text-muted);">Low</span></div>
+                        </div>
+                    </div>
+
+                    <button class="btn" onclick="startDownload()" id="dl-btn"
+                        style="width:100%;justify-content:center;background:linear-gradient(135deg,#ff0000,#cc0000);color:#fff;border:none;">
+                        ⬇️ Download Now
+                    </button>
+                </div>
+
+                <!-- Steps -->
+                <div id="steps-wrap" style="display:none;flex-direction:column;margin-top:16px;">
+                    <div class="step-indicator" id="step1">
+                        <div class="step-dot"></div><span id="step1-text">Connecting to server…</span>
+                    </div>
+                    <div class="step-indicator" id="step2">
+                        <div class="step-dot"></div><span>Extracting video stream…</span>
+                    </div>
+                    <div class="step-indicator" id="step3">
+                        <div class="step-dot"></div><span>Downloading file…</span>
+                    </div>
+                </div>
+                <div class="progress-bar-wrap" id="prog-wrap">
+                    <div class="progress-bar-fill" id="prog-fill"
+                        style="width:0%;background:linear-gradient(90deg,#ff0000,#cc0000)"></div>
+                </div>
+
+                <!-- Success -->
+                <div class="dl-success" id="dl-success">
+                    <span style="font-size:2rem;">✅</span>
+                    <div>
+                        <div style="font-weight:700;margin-bottom:4px;">Download Complete!</div>
+                        <div style="font-size:.82rem;color:var(--text-secondary);" id="dl-filename">—</div>
+                    </div>
+                    <button class="btn btn-ghost" onclick="resetTool()" style="margin-left:auto;">Download
+                        Another</button>
+                </div>
+            </div>
+
+            <!-- Server Setup Instructions -->
+            <div id="server-help"
+                style="margin-top:24px;padding:20px 24px;background:var(--bg-card);border:1px solid rgba(245,158,11,.3);border-radius:var(--radius-lg);display:none;">
+                <h3 style="font-size:.95rem;font-weight:700;margin-bottom:12px;">⚙️ Start the API Server</h3>
+                <p style="font-size:.83rem;color:var(--text-secondary);margin-bottom:12px;">The YouTube downloader
+                    requires the local API server to be running. Open a terminal in the <code
+                        style="background:var(--bg-glass);padding:2px 6px;border-radius:4px;">MultiTools</code> folder
+                    and run:</p>
+                <div
+                    style="background:#0d0d14;border:1px solid var(--border);border-radius:var(--radius-md);padding:14px 16px;font-family:'Courier New',monospace;font-size:.85rem;margin-bottom:12px;">
+                    <div style="color:#a855f7;">$ </div>
+                    <div style="color:#a0e6a0;">npm install</div>
+                    <div style="color:#a855f7;margin-top:6px;">$ </div>
+                    <div style="color:#a0e6a0;">node server.js</div>
+                </div>
+                <p style="font-size:.8rem;color:var(--text-muted);">Requires: Node.js 16+ and Python 3.9+ (for yt-dlp)
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+    <script src="../script.js"></script>
+    <script>
+        const API = 'http://localhost:3001';
+        const YT_REGEX = /(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})/i;
+
+        let selectedFmt = 'mp4';
+        let selectedQ = '1080';
+        let currentVideoUrl = '';
+        let currentVideoTitle = 'video';   // stored after info API fetch
+        let serverOnline = false;
+
+        // ── Check server on load ──────────────────────────────────────────────────────
+        async function checkServer() {
+            try {
+                const r = await fetch(`${API}/api/health`, { signal: AbortSignal.timeout(3000) });
+                const d = await r.json();
+                if (d.status === 'ok') {
+                    serverOnline = true;
+                    document.getElementById('server-dot').classList.add('connected');
+                    document.getElementById('server-status-text').textContent = '✅ API Server connected — downloads are ready';
+                    document.getElementById('server-banner').style.borderColor = 'rgba(16,185,129,.3)';
+                    document.getElementById('server-banner').style.background = 'rgba(16,185,129,.06)';
+                    document.getElementById('server-help').style.display = 'none';
+                }
+            } catch {
+                serverOnline = false;
+                document.getElementById('server-dot').classList.remove('connected');
+                document.getElementById('server-status-text').textContent = '⚠️ API Server offline — run "node server.js" in the MultiTools folder';
+                document.getElementById('server-help').style.display = 'block';
+            }
+        }
+        checkServer();
+
+        // ── URL input validation ──────────────────────────────────────────────────────
+        function onUrlInput() {
+            const url = document.getElementById('yt-url').value.trim();
+            const btn = document.getElementById('analyze-btn');
+            const badge = document.getElementById('yt-badge');
+            const valid = YT_REGEX.test(url);
+
+            document.getElementById('vid-card').classList.remove('show');
+            document.getElementById('format-section').style.display = 'none';
+
+            if (!url) { btn.disabled = true; btn.style.opacity = '.5'; badge.style.display = 'none'; return; }
+
+            badge.style.display = 'block';
+            if (valid) {
+                const id = url.match(YT_REGEX)[1];
+                badge.innerHTML = `<span style="color:var(--success)">✅ Valid YouTube URL · ID: <code style="background:var(--bg-glass);padding:1px 5px;border-radius:4px;">${id}</code></span>`;
+                btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer';
+            } else {
+                badge.innerHTML = '<span style="color:var(--danger)">❌ Please enter a valid YouTube URL</span>';
+                btn.disabled = true; btn.style.opacity = '.5';
+            }
+        }
+
+        // ── Step 1: Analyze video ─────────────────────────────────────────────────────
+        async function analyzeVideo() {
+            const url = document.getElementById('yt-url').value.trim();
+            if (!YT_REGEX.test(url)) return;
+
+            if (!serverOnline) {
+                showToast('⚠️ API Server is not running. Run "node server.js" first.', 'error', 6000);
+                document.getElementById('server-help').style.display = 'block';
+                return;
+            }
+
+            currentVideoUrl = url;
+            document.getElementById('analyze-btn').disabled = true;
+            document.getElementById('analyze-btn').style.opacity = '.6';
+            const prog = document.getElementById('prog-wrap');
+            const fill = document.getElementById('prog-fill');
+            prog.classList.add('active'); setProgress(10);
+
+            try {
+                const resp = await fetch(`${API}/api/yt/info?url=${encodeURIComponent(url)}`);
+                const data = await resp.json();
+                if (!resp.ok || data.error) throw new Error(data.error || 'Failed to fetch info');
+
+                setProgress(100);
+                setTimeout(() => { prog.classList.remove('active'); setProgress(0); }, 400);
+
+                // Show video card
+                document.getElementById('vid-thumb').src = data.thumbnail;
+                document.getElementById('vid-title').textContent = data.title;
+                document.getElementById('vid-uploader').textContent = data.uploader || '';
+                document.getElementById('vid-duration').textContent = formatDuration(data.duration);
+                currentVideoTitle = data.title || 'video';  // cache title for filename
+                document.getElementById('vid-card').classList.add('show');
+                document.getElementById('format-section').style.display = 'block';
+                document.getElementById('analyze-btn').disabled = false;
+                document.getElementById('analyze-btn').style.opacity = '1';
+                showToast('Video found! Choose format and quality.', 'success');
+            } catch (err) {
+                prog.classList.remove('active'); setProgress(0);
+                document.getElementById('analyze-btn').disabled = false;
+                document.getElementById('analyze-btn').style.opacity = '1';
+                showToast('Error: ' + err.message, 'error');
+            }
+        }
+
+        // ── Step 2: Download ─────────────────────────────────────────────────────────
+        async function startDownload() {
+            if (!currentVideoUrl) return;
+            if (!serverOnline) { showToast('API Server is offline.', 'error'); return; }
+
+            // Show steps
+            document.getElementById('format-section').style.display = 'none';
+            const stepsWrap = document.getElementById('steps-wrap');
+            stepsWrap.style.display = 'flex';
+            setStep(1, 'active'); setProgress(20);
+
+            try {
+                setStep(1, 'done'); setStep(2, 'active'); setProgress(40);
+                await sleep(300);
+
+                // Build download URL — pass cached title so backend can name the file
+                const dlUrl = `${API}/api/yt/download?url=${encodeURIComponent(currentVideoUrl)}&format=${selectedFmt}&quality=${selectedQ}&title=${encodeURIComponent(currentVideoTitle)}`;
+
+                setStep(2, 'done'); setStep(3, 'active'); setProgress(60);
+
+                // Trigger download via anchor
+                const a = document.createElement('a');
+                a.href = dlUrl;
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+
+                // Simulate progress while yt-dlp processes
+                let w = 60;
+                const iv = setInterval(() => {
+                    w = Math.min(w + 5, 95);
+                    setProgress(w);
+                }, 800);
+
+                setTimeout(() => {
+                    clearInterval(iv);
+                    setStep(3, 'done'); setProgress(100);
+                    setTimeout(() => {
+                        document.getElementById('prog-wrap').classList.remove('active');
+                        stepsWrap.style.display = 'none';
+                        const fname = selectedFmt === 'mp3' ? 'audio.mp3' : `video_${selectedQ}p.mp4`;
+                        document.getElementById('dl-filename').textContent = fname;
+                        document.getElementById('dl-success').classList.add('show');
+                        showToast('Download started! Check your Downloads folder. 🎉', 'success');
+                        resetSteps(); setProgress(0);
+                    }, 400);
+                }, 4000);
+
+            } catch (err) {
+                showToast('Download failed: ' + err.message, 'error');
+                stepsWrap.style.display = 'none';
+                document.getElementById('format-section').style.display = 'block';
+                resetSteps(); setProgress(0);
+            }
+        }
+
+        function selectFmt(f) {
+            selectedFmt = f;
+            ['mp4', 'mp3'].forEach(x => document.getElementById('fmt-' + x).classList.remove('selected'));
+            document.getElementById('fmt-' + f).classList.add('selected');
+            document.getElementById('quality-section').style.display = f === 'mp3' ? 'none' : 'block';
+        }
+
+        function selectQ(q) {
+            selectedQ = q;
+            ['1080', '720', '480', '360'].forEach(x => {
+                const el = document.getElementById('q-' + x);
+                if (el) el.classList.remove('selected');
+            });
+            const el = document.getElementById('q-' + q);
+            if (el) el.classList.add('selected');
+        }
+
+        function resetTool() {
+            currentVideoUrl = '';
+            document.getElementById('yt-url').value = '';
+            document.getElementById('yt-badge').style.display = 'none';
+            document.getElementById('vid-card').classList.remove('show');
+            document.getElementById('format-section').style.display = 'none';
+            document.getElementById('steps-wrap').style.display = 'none';
+            document.getElementById('dl-success').classList.remove('show');
+            document.getElementById('analyze-btn').disabled = true;
+            document.getElementById('analyze-btn').style.opacity = '.5';
+            resetSteps(); setProgress(0);
+        }
+
+        function setStep(n, s) { document.getElementById('step' + n).className = 'step-indicator ' + s; }
+        function resetSteps() { [1, 2, 3].forEach(n => setStep(n, '')); }
+        function setProgress(p) { document.getElementById('prog-fill').style.width = p + '%'; }
+        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+        function formatDuration(s) {
+            if (!s) return '';
+            const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+            return h ? `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}` : `${m}:${String(sec).padStart(2, '0')}`;
+        }
+    </script>
+</body>
+
+</html>

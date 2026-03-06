@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <meta name="description"
+        content="Remove image backgrounds using AI directly in your browser. No upload. Get a transparent PNG instantly." />
+    <title>Remove Background – ToolKit Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="../style.css" />
+    <style>
+        .badge-ai {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            padding: 4px 12px;
+            background: rgba(168, 85, 247, .12);
+            border: 1px solid rgba(168, 85, 247, .3);
+            border-radius: 40px;
+            color: #a855f7;
+            margin-bottom: 16px;
+        }
+
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: .85rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .step-indicator .step-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--border);
+            flex-shrink: 0;
+        }
+
+        .step-indicator.active .step-dot {
+            background: #a855f7;
+            animation: pulseDot .8s ease infinite;
+        }
+
+        .step-indicator.done .step-dot {
+            background: var(--success);
+        }
+
+        .step-indicator.active {
+            border-color: rgba(168, 85, 247, .3);
+            color: var(--text-primary);
+        }
+
+        .step-indicator.done {
+            border-color: rgba(16, 185, 129, .25);
+            color: var(--success);
+        }
+
+        @keyframes pulseDot {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.4);
+                opacity: .7;
+            }
+        }
+
+        .preview-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .preview-card {
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+        }
+
+        .preview-card-img {
+            width: 100%;
+            aspect-ratio: 1;
+            object-fit: contain;
+            display: block;
+            max-height: 260px;
+        }
+
+        .checkerboard {
+            background: repeating-conic-gradient(#55555522 0% 25%, transparent 0% 50%) 0 0/24px 24px;
+        }
+
+        .preview-label {
+            padding: 10px 14px;
+            font-size: .75rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: .05em;
+            text-align: center;
+        }
+
+        .dl-actions {
+            display: none;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+
+        .dl-actions.show {
+            display: flex;
+        }
+
+        .model-info {
+            padding: 14px 16px;
+            background: rgba(168, 85, 247, .07);
+            border: 1px solid rgba(168, 85, 247, .2);
+            border-radius: var(--radius-md);
+            font-size: .84rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .model-progress-bar {
+            height: 4px;
+            background: var(--border);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .model-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #a855f7, #6c63ff);
+            width: 0%;
+            transition: width .3s;
+        }
+
+        @media(max-width:600px) {
+            .preview-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="particles-canvas"></canvas>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="../index.html" class="logo"><span class="logo-icon">⚡</span><span class="logo-text">ToolKit <span
+                        class="accent">Pro</span></span></a>
+            <div class="nav-center">
+                <div class="search-bar" id="search-bar"><span class="search-icon">🔍</span><input type="text"
+                        id="search-input" placeholder="Search tools..." autocomplete="off" />
+                    <div class="search-results" id="search-results"></div>
+                </div>
+            </div>
+            <div class="nav-right"><button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme"><span
+                        class="theme-icon">🌙</span></button><button class="nav-mobile-toggle"
+                    id="mobile-menu-btn">☰</button></div>
+        </div>
+    </nav>
+
+    <div class="tool-page-wrap">
+        <a href="../index.html" class="back-link">← Back to All Tools</a>
+        <div class="tool-page-hero">
+            <div class="tool-page-icon">✂️</div>
+            <h1 class="tool-page-title gradient-text">Remove Background</h1>
+            <p class="tool-page-sub">AI removes background from images entirely in your browser. No server. No API key.
+                Transparent PNG output.</p>
+        </div>
+
+        <div class="tool-page-body">
+            <div class="tool-box">
+                <span class="badge-ai">🤖 AI · WASM + ONNX · Zero Upload · In-Browser</span>
+
+                <!-- Model info / loading progress -->
+                <div class="model-info" id="model-info">
+                    <span style="font-size:1.1rem;">ℹ️</span>
+                    <div style="flex:1;">
+                        <div><strong>First run:</strong> AI model downloads once (~30MB) and is cached in your browser
+                            permanently.</div>
+                        <div id="model-progress-text" style="font-size:.78rem;color:var(--text-muted);margin-top:4px;">
+                            Model ready after upload.</div>
+                        <div class="model-progress-bar">
+                            <div class="model-progress-fill" id="model-prog-fill"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upload -->
+                <div class="dropzone" id="dropzone" onclick="document.getElementById('img-input').click()">
+                    <input type="file" id="img-input" accept="image/*" style="display:none"
+                        onchange="handleImage(this.files[0])" />
+                    <div class="dropzone-icon">✂️</div>
+                    <div class="dropzone-title" id="drop-title">Drop your image here</div>
+                    <div class="dropzone-sub">JPEG, PNG, WebP · Max 10MB · Best on: portraits, products, animals</div>
+                </div>
+
+                <button id="remove-btn" onclick="removeBg()"
+                    style="width:100%;justify-content:center;margin-top:16px;display:none;background:linear-gradient(135deg,#a855f7,#6c63ff);color:#fff;border:none;border-radius:var(--radius-md);padding:14px 24px;font-size:.95rem;font-weight:600;cursor:pointer;transition:all var(--transition);">
+                    ✂️ Remove Background (AI)
+                </button>
+
+                <!-- Steps -->
+                <div id="steps-wrap" style="display:none;flex-direction:column;margin-top:16px;">
+                    <div class="step-indicator" id="step1">
+                        <div class="step-dot"></div><span id="step1-text">Loading AI model…</span>
+                    </div>
+                    <div class="step-indicator" id="step2">
+                        <div class="step-dot"></div><span>Analyzing image…</span>
+                    </div>
+                    <div class="step-indicator" id="step3">
+                        <div class="step-dot"></div><span>Removing background…</span>
+                    </div>
+                    <div class="step-indicator" id="step4">
+                        <div class="step-dot"></div><span>Creating transparent PNG…</span>
+                    </div>
+                </div>
+                <div class="progress-bar-wrap" id="prog-wrap">
+                    <div class="progress-bar-fill" id="prog-fill"
+                        style="width:0%;background:linear-gradient(90deg,#a855f7,#6c63ff)"></div>
+                </div>
+
+                <!-- Before / After -->
+                <div class="preview-grid" id="preview-grid" style="display:none">
+                    <div class="preview-card">
+                        <div style="overflow:hidden;"><img class="preview-card-img" id="orig-img" src=""
+                                alt="Original" /></div>
+                        <div class="preview-label">Original</div>
+                    </div>
+                    <div class="preview-card">
+                        <div class="checkerboard" style="position:relative;">
+                            <img class="preview-card-img" id="result-img" src="" alt="Result" style="display:none" />
+                            <div id="result-placeholder"
+                                style="width:100%;min-height:200px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;color:var(--text-muted);font-size:.84rem;">
+                                <span style="font-size:2rem;">✨</span><span>Result appears here</span>
+                            </div>
+                        </div>
+                        <div class="preview-label">Transparent PNG</div>
+                    </div>
+                </div>
+
+                <!-- Download -->
+                <div class="dl-actions" id="dl-actions">
+                    <button onclick="downloadResult()" class="btn btn-primary"
+                        style="flex:1;justify-content:center;background:linear-gradient(135deg,#a855f7,#6c63ff);">⬇️
+                        Download PNG</button>
+                    <button onclick="resetTool()" class="btn btn-ghost" style="flex:1;justify-content:center;">🔄 New
+                        Image</button>
+                </div>
+            </div>
+
+            <!-- Tips -->
+            <div style="margin-top:24px;display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+                <div
+                    style="padding:18px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);text-align:center;">
+                    <span style="font-size:1.4rem;">👤</span>
+                    <h4 style="margin:8px 0 4px;font-size:.88rem;">People</h4>
+                    <p style="font-size:.76rem;color:var(--text-secondary);">Portraits, selfies</p>
+                </div>
+                <div
+                    style="padding:18px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);text-align:center;">
+                    <span style="font-size:1.4rem;">📦</span>
+                    <h4 style="margin:8px 0 4px;font-size:.88rem;">Products</h4>
+                    <p style="font-size:.76rem;color:var(--text-secondary);">E-commerce shots</p>
+                </div>
+                <div
+                    style="padding:18px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);text-align:center;">
+                    <span style="font-size:1.4rem;">🐾</span>
+                    <h4 style="margin:8px 0 4px;font-size:.88rem;">Animals</h4>
+                    <p style="font-size:.76rem;color:var(--text-secondary);">Pets, wildlife</p>
+                </div>
+            </div>
+            <style>
+                @media(max-width:500px) {
+                    div.tool-page-body>div:last-child {
+                        grid-template-columns: 1fr !important;
+                    }
+                }
+            </style>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+    <script src="../script.js"></script>
+
+    <!-- Load @imgly/background-removal as ES module with error handling -->
+    <script type="module">
+        let imglyFn = null;
+        let loadError = null;
+
+        // Attempt 1: primary CDN
+        async function loadLibrary() {
+            try {
+                const mod = await import('https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.6/+esm');
+                imglyFn = mod.default || mod.removeBackground;
+                window.__imglyFn = imglyFn;
+                window.__imglyReady = true;
+                document.getElementById('model-progress-text').textContent = 'AI engine ready. Upload an image to begin.';
+            } catch (e) {
+                loadError = e;
+                // Attempt 2: unpkg CDN
+                try {
+                    const mod2 = await import('https://unpkg.com/@imgly/background-removal@1.5.6/dist/browser/index.mjs');
+                    imglyFn = mod2.default || mod2.removeBackground;
+                    window.__imglyFn = imglyFn;
+                    window.__imglyReady = true;
+                    document.getElementById('model-progress-text').textContent = 'AI engine ready (fallback CDN). Upload an image.';
+                } catch (e2) {
+                    window.__imglyReady = false;
+                    window.__imglyError = e2.message;
+                    document.getElementById('model-progress-text').textContent = '⚠️ AI library failed to load. Try refreshing.';
+                    document.getElementById('model-info').style.borderColor = 'rgba(239,68,68,.3)';
+                }
+            }
+        }
+        loadLibrary();
+
+        initDropzone(document.getElementById('dropzone'), window.handleImage);
+
+        let currentFile = null;
+        let resultBlob = null;
+
+        window.handleImage = function (file) {
+            if (!file || !file.type.startsWith('image/')) { showToast('Please upload a valid image.', 'error'); return; }
+            if (file.size > 10 * 1024 * 1024) { showToast('File too large. Max 10MB for AI.', 'error'); return; }
+            currentFile = file; resultBlob = null;
+            document.getElementById('drop-title').textContent = '✅ ' + file.name;
+            const reader = new FileReader();
+            reader.onload = e => {
+                document.getElementById('orig-img').src = e.target.result;
+                document.getElementById('preview-grid').style.display = 'grid';
+                document.getElementById('result-img').style.display = 'none';
+                document.getElementById('result-placeholder').style.display = 'flex';
+            };
+            reader.readAsDataURL(file);
+            document.getElementById('remove-btn').style.display = 'block';
+            document.getElementById('dl-actions').classList.remove('show');
+            showToast('Image loaded! Click "Remove Background".', 'success');
+        };
+
+        window.removeBg = async function () {
+            if (!currentFile) return;
+            if (!window.__imglyReady || !window.__imglyFn) {
+                showToast('AI library is loading or failed. Please refresh and try again.', 'error');
+                return;
+            }
+
+            document.getElementById('remove-btn').style.display = 'none';
+            document.getElementById('steps-wrap').style.display = 'flex';
+            document.getElementById('prog-wrap').classList.add('active');
+            document.getElementById('dl-actions').classList.remove('show');
+            setStep(1, 'active'); setProgress(5);
+
+            showToast('AI is processing your image. Please wait…', 'info', 10000);
+
+            try {
+                const config = {
+                    progress: (key, current, total) => {
+                        if (key.includes('fetch') || key.includes('model')) {
+                            const pct = total > 0 ? Math.round((current / total) * 35) : 10;
+                            setProgress(5 + pct);
+                            document.getElementById('model-prog-fill').style.width = (total > 0 ? Math.round((current / total) * 100) : 50) + '%';
+                            document.getElementById('model-progress-text').textContent = `Downloading model… ${total > 0 ? Math.round((current / total) * 100) : '?'}%`;
+                        }
+                        if (key.includes('compute') || key.includes('inference')) {
+                            setStep(1, 'done'); setStep(2, 'active');
+                            const pct = total > 0 ? Math.round((current / total) * 30) : 15;
+                            setProgress(40 + pct);
+                        }
+                    },
+                    fetchArgs: { cache: 'force-cache' },    // cache model aggressively
+                    model: 'medium',                          // better than 'small', still fast
+                };
+
+                resultBlob = await window.__imglyFn(currentFile, config);
+
+                setStep(1, 'done'); setStep(2, 'done'); setStep(3, 'active');
+                setProgress(80);
+                await sleep(200);
+                setStep(3, 'done'); setStep(4, 'active');
+
+                const url = URL.createObjectURL(resultBlob);
+                document.getElementById('result-img').src = url;
+                document.getElementById('result-img').style.display = 'block';
+                document.getElementById('result-placeholder').style.display = 'none';
+
+                setStep(4, 'done'); setProgress(100);
+                setTimeout(() => document.getElementById('prog-wrap').classList.remove('active'), 400);
+                document.getElementById('dl-actions').classList.add('show');
+                document.getElementById('model-progress-text').textContent = '✅ Model cached. Future runs are instant.';
+                document.getElementById('model-prog-fill').style.width = '100%';
+                showToast('Background removed! 🎉 Click "Download PNG".', 'success');
+
+            } catch (err) {
+                console.error('[Remove BG Error]', err);
+                showToast('AI processing failed: ' + (err.message || 'Unknown error. Try a smaller image.'), 'error');
+                document.getElementById('remove-btn').style.display = 'block';
+                document.getElementById('steps-wrap').style.display = 'none';
+                document.getElementById('prog-wrap').classList.remove('active');
+                resetSteps(); setProgress(0);
+            }
+        };
+
+        window.downloadResult = function () {
+            if (!resultBlob) return;
+            const name = (currentFile.name.replace(/\.[^.]+$/, '') || 'image') + '-nobg.png';
+            downloadBlob(resultBlob, name);
+            showToast('Transparent PNG downloaded!', 'success');
+        };
+
+        window.resetTool = function () {
+            currentFile = null; resultBlob = null;
+            document.getElementById('remove-btn').style.display = 'none';
+            document.getElementById('steps-wrap').style.display = 'none';
+            document.getElementById('prog-wrap').classList.remove('active');
+            document.getElementById('preview-grid').style.display = 'none';
+            document.getElementById('dl-actions').classList.remove('show');
+            document.getElementById('drop-title').textContent = 'Drop your image here';
+            document.getElementById('img-input').value = '';
+            resetSteps(); setProgress(0);
+        };
+
+        function setStep(n, s) { document.getElementById('step' + n).className = 'step-indicator ' + s; }
+        function resetSteps() { [1, 2, 3, 4].forEach(n => setStep(n, '')); }
+        function setProgress(p) { document.getElementById('prog-fill').style.width = p + '%'; }
+        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+    </script>
+</body>
+
+</html>

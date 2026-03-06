@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <meta name="description"
+        content="Generate trending hashtags for Instagram, Twitter, and TikTok from any keyword. Boost your reach for free." />
+    <title>Hashtag Generator – ToolKit Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="../style.css" />
+</head>
+
+<body>
+    <canvas id="particles-canvas"></canvas>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="../index.html" class="logo"><span class="logo-icon">⚡</span><span class="logo-text">ToolKit <span
+                        class="accent">Pro</span></span></a>
+            <div class="nav-center">
+                <div class="search-bar" id="search-bar"><span class="search-icon">🔍</span><input type="text"
+                        id="search-input" placeholder="Search tools..." autocomplete="off" />
+                    <div class="search-results" id="search-results"></div>
+                </div>
+            </div>
+            <div class="nav-right"><button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme"><span
+                        class="theme-icon">🌙</span></button><button class="nav-mobile-toggle"
+                    id="mobile-menu-btn">☰</button></div>
+        </div>
+    </nav>
+
+    <div class="tool-page-wrap">
+        <a href="../index.html" class="back-link">← Back to All Tools</a>
+        <div class="tool-page-hero">
+            <div class="tool-page-icon">#️⃣</div>
+            <h1 class="tool-page-title gradient-text">Hashtag Generator</h1>
+            <p class="tool-page-sub">Enter a keyword and generate 30+ trending hashtags for Instagram, Twitter, and
+                TikTok.</p>
+        </div>
+        <div class="tool-page-body">
+            <div class="tool-box">
+                <div class="form-group">
+                    <label class="form-label" for="hash-keyword">Keyword or Topic</label>
+                    <input class="form-input" type="text" id="hash-keyword"
+                        placeholder="e.g. travel, fitness, food, fashion..."
+                        onkeydown="if(event.key==='Enter')genHashtags()" />
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Platform</label>
+                    <div style="display:flex;gap:10px;">
+                        <label
+                            style="display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--bg-glass);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;flex:1;justify-content:center;transition:all var(--transition);"
+                            id="plat-ig" onclick="selectPlatform('ig')">📸 Instagram</label>
+                        <label
+                            style="display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--bg-glass);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;flex:1;justify-content:center;transition:all var(--transition);"
+                            id="plat-tw" onclick="selectPlatform('tw')">🐦 Twitter</label>
+                        <label
+                            style="display:flex;align-items:center;gap:8px;padding:10px 16px;background:var(--bg-glass);border:1px solid var(--border);border-radius:var(--radius-sm);cursor:pointer;flex:1;justify-content:center;transition:all var(--transition);"
+                            id="plat-tt" onclick="selectPlatform('tt')">🎵 TikTok</label>
+                    </div>
+                </div>
+                <button class="btn btn-primary btn-glow" onclick="genHashtags()"
+                    style="width:100%;justify-content:center;"># Generate Hashtags</button>
+
+                <div id="hash-result" style="display:none;margin-top:24px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                        <span style="font-size:.85rem;font-weight:600;color:var(--text-secondary);" id="hash-count">0
+                            hashtags</span>
+                        <div style="display:flex;gap:8px;">
+                            <button class="copy-btn" onclick="copyAllHashtags()" id="copy-all-btn">📋 Copy All</button>
+                        </div>
+                    </div>
+                    <div class="hashtag-list" id="hashtag-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+    <script src="../script.js"></script>
+    <script>
+        let currentPlatform = 'ig';
+
+        function selectPlatform(plat) {
+            currentPlatform = plat;
+            ['ig', 'tw', 'tt'].forEach(p => {
+                const el = document.getElementById('plat-' + p);
+                el.style.border = '1px solid var(--border)';
+                el.style.color = 'var(--text-secondary)';
+            });
+            const sel = document.getElementById('plat-' + plat);
+            sel.style.border = '1px solid var(--primary)';
+            sel.style.color = 'var(--primary)';
+        }
+        selectPlatform('ig');
+
+        const hashtagDB = {
+            travel: ['travel', 'wanderlust', 'travelgram', 'travelphotography', 'adventure', 'explore', 'instatravel', 'travelblogger', 'vacation', 'travellife', 'worldtravel', 'globetrotter', 'backpacker', 'travelinspiration', 'trip', 'holiday', 'nature', 'beautifuldestinations', 'passportready', 'traveltheworld', 'seetheworld', 'traveler', 'instapassport', 'aroundtheworld', 'getaway', 'bucketlist', 'roadtrip', 'traveladdict', 'tourism', 'discover'],
+            food: ['food', 'foodie', 'foodphotography', 'instafood', 'yummy', 'delicious', 'foodstagram', 'homecooking', 'cooking', 'recipe', 'foodlover', 'eat', 'dinner', 'lunch', 'breakfast', 'healthy', 'healthyfood', 'nutrition', 'chef', 'baking', 'dessert', 'restaurant', 'foodblogger', 'meal', 'taste', 'gourmet', 'organic', 'vegan', 'vegetarian', 'fastfood'],
+            fitness: ['fitness', 'gym', 'workout', 'fitnessmotivation', 'fit', 'health', 'training', 'bodybuilding', 'healthylifestyle', 'exercise', 'motivation', 'lifestyle', 'muscle', 'personaltrainer', 'weightloss', 'cardio', 'strength', 'fitlife', 'fitnessjourney', 'wellbeing', 'crossfit', 'yoga', 'running', 'nopainnogain', 'gains', 'eatclean', 'fitfam', 'gymlife', 'active', 'athlete'],
+            fashion: ['fashion', 'style', 'ootd', 'fashionblogger', 'outfit', 'fashionstyle', 'streetstyle', 'luxury', 'model', 'trend', 'fashionista', 'clothing', 'designer', 'stylish', 'outfitoftheday', 'vintage', 'accessories', 'beauty', 'makeup', 'skincare', 'glam', 'chic', 'vogue', 'couture', 'swag', 'instafashion', 'wiwt', 'fashionable', 'lookoftheday', 'dress'],
+            nature: ['nature', 'naturephotography', 'wildlife', 'landscape', 'mountains', 'forest', 'sky', 'sunset', 'sunrise', 'earth', 'outdoors', 'green', 'beautiful', 'scenery', 'photography', 'photo', 'naturelover', 'wilderness', 'plants', 'flowers', 'rain', 'ocean', 'water', 'river', 'lake', 'beach', 'trees', 'birds', 'animals', 'conservation'],
+            tech: ['technology', 'tech', 'innovation', 'programming', 'coding', 'developer', 'software', 'ai', 'machinelearning', 'datascience', 'python', 'javascript', 'webdev', 'startup', 'cybersecurity', 'blockchain', 'iot', 'cloud', 'digital', 'gadgets', 'robotics', 'deeplearning', 'openai', 'chatgpt', 'programming', 'code', 'github', 'devops', 'linux', 'mobile'],
+        };
+
+        function getHashtags(keyword) {
+            const k = keyword.toLowerCase();
+            let base = hashtagDB[k] || [];
+
+            // Generate smart hashtags from keyword
+            const smart = [
+                k, k + 'lover', k + 'life', k + 'gram', k + 'photography', k + 'community',
+                'best' + k, 'daily' + k, 'the' + k + 'life', k + 'blogger', k + 'tips',
+                k + 'motivation', k + 'goals', k + 'oftheday', 'trending' + k,
+                k + 'world', k + 'style', k + 'network', k + 'culture', k + 'vibes'
+            ];
+
+            const general = ['viral', 'trending', 'explorepage', 'explore', 'follow', 'like', 'share', 'content', 'creator', 'instagood', 'picoftheday', 'photooftheday', 'popular'];
+
+            const all = [...new Set([...base, ...smart, ...general])];
+            return all.slice(0, 30);
+        }
+
+        function genHashtags() {
+            const keyword = document.getElementById('hash-keyword').value.trim();
+            if (!keyword) { showToast('Please enter a keyword.', 'error'); return; }
+
+            const tags = getHashtags(keyword.replace(/\s+/g, '').toLowerCase());
+            const list = document.getElementById('hashtag-list');
+            const countEl = document.getElementById('hash-count');
+            const result = document.getElementById('hash-result');
+
+            list.innerHTML = '';
+            tags.forEach(tag => {
+                const chip = document.createElement('div');
+                chip.className = 'hashtag-chip';
+                chip.textContent = '#' + tag;
+                chip.title = 'Click to copy';
+                chip.onclick = () => copyToClipboard('#' + tag, chip);
+                list.appendChild(chip);
+            });
+
+            countEl.textContent = `${tags.length} hashtags generated`;
+            result.style.display = 'block';
+            showToast(`${tags.length} hashtags generated!`, 'success');
+        }
+
+        function copyAllHashtags() {
+            const chips = document.querySelectorAll('.hashtag-chip');
+            const text = Array.from(chips).map(c => c.textContent).join(' ');
+            copyToClipboard(text, document.getElementById('copy-all-btn'));
+        }
+    </script>
+</body>
+
+</html>

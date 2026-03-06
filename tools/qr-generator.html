@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <meta name="description"
+        content="Generate QR codes from any URL or text for free. Download as PNG instantly. No signup required." />
+    <title>QR Code Generator – ToolKit Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="../style.css" />
+    <style>
+        .qr-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 30px;
+            gap: 20px;
+        }
+
+        #qr-canvas {
+            border-radius: var(--radius-md);
+            display: none;
+            border: 6px solid #fff;
+        }
+
+        .qr-placeholder {
+            width: 200px;
+            height: 200px;
+            border-radius: var(--radius-md);
+            background: var(--bg-glass);
+            border: 2px dashed var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 12px;
+            color: var(--text-muted);
+            font-size: .85rem;
+        }
+
+        .color-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .color-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 14px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+        }
+
+        .color-wrap input[type="color"] {
+            width: 36px;
+            height: 36px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            border-radius: 6px;
+            padding: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="particles-canvas"></canvas>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="../index.html" class="logo"><span class="logo-icon">⚡</span><span class="logo-text">ToolKit <span
+                        class="accent">Pro</span></span></a>
+            <div class="nav-center">
+                <div class="search-bar" id="search-bar"><span class="search-icon">🔍</span><input type="text"
+                        id="search-input" placeholder="Search tools..." autocomplete="off" />
+                    <div class="search-results" id="search-results"></div>
+                </div>
+            </div>
+            <div class="nav-right"><button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme"><span
+                        class="theme-icon">🌙</span></button><button class="nav-mobile-toggle"
+                    id="mobile-menu-btn">☰</button></div>
+        </div>
+    </nav>
+
+    <div class="tool-page-wrap">
+        <a href="../index.html" class="back-link">← Back to All Tools</a>
+        <div class="tool-page-hero">
+            <div class="tool-page-icon">⬛</div>
+            <h1 class="tool-page-title gradient-text">QR Code Generator</h1>
+            <p class="tool-page-sub">Generate custom QR codes from any URL or text. Download as PNG instantly — no
+                signup needed.</p>
+        </div>
+        <div class="tool-page-body">
+            <div class="tool-box" style="display:grid;grid-template-columns:1fr auto;gap:40px;align-items:start;">
+                <div>
+                    <div class="form-group">
+                        <label class="form-label" for="qr-input">Text or URL</label>
+                        <textarea class="form-input" id="qr-input" rows="3"
+                            placeholder="https://yourwebsite.com or any text..." oninput="onQrInput()"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Size</label>
+                        <select class="form-input" id="qr-size" onchange="generateQR()">
+                            <option value="200">200×200 (Small)</option>
+                            <option value="300" selected>300×300 (Medium)</option>
+                            <option value="400">400×400 (Large)</option>
+                            <option value="600">600×600 (XL)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Colors</label>
+                        <div class="color-row">
+                            <div class="color-wrap"><input type="color" id="qr-fg" value="#6c63ff"
+                                    onchange="generateQR()" /><label style="font-size:.85rem;">Foreground</label></div>
+                            <div class="color-wrap"><input type="color" id="qr-bg" value="#ffffff"
+                                    onchange="generateQR()" /><label style="font-size:.85rem;">Background</label></div>
+                        </div>
+                    </div>
+
+                    <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                        <button class="btn btn-primary btn-glow" onclick="generateQR()"
+                            style="flex:1;justify-content:center;">⬛ Generate QR</button>
+                        <button class="btn btn-ghost" id="dl-qr-btn" onclick="downloadQR()"
+                            style="flex:1;justify-content:center;display:none;">⬇️ Download PNG</button>
+                    </div>
+                </div>
+
+                <div class="qr-display">
+                    <div class="qr-placeholder" id="qr-placeholder"><span style="font-size:2rem;">⬛</span><span>QR
+                            Preview</span></div>
+                    <canvas id="qr-canvas" width="300" height="300"></canvas>
+                </div>
+            </div>
+
+            <style>
+                @media(max-width:700px) {
+                    .tool-box {
+                        grid-template-columns: 1fr !important;
+                    }
+
+                    .qr-display {
+                        order: -1;
+                    }
+                }
+            </style>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+    <script src="../script.js"></script>
+    <!-- QRCode.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        let debounceTimer;
+        function onQrInput() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(generateQR, 400);
+        }
+
+        function generateQR() {
+            const text = document.getElementById('qr-input').value.trim();
+            if (!text) return;
+            const size = parseInt(document.getElementById('qr-size').value);
+            const fg = document.getElementById('qr-fg').value;
+            const bg = document.getElementById('qr-bg').value;
+            const canvas = document.getElementById('qr-canvas');
+            canvas.width = size; canvas.height = size;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, size, size);
+
+            // Use QRCode.js via a temp div
+            const tmp = document.createElement('div');
+            try {
+                new QRCode(tmp, {
+                    text: text,
+                    width: size, height: size,
+                    colorDark: fg, colorLight: bg,
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+                setTimeout(() => {
+                    const img = tmp.querySelector('img') || tmp.querySelector('canvas');
+                    if (img) {
+                        const image = new Image();
+                        image.onload = () => {
+                            ctx.drawImage(image, 0, 0, size, size);
+                            document.getElementById('qr-placeholder').style.display = 'none';
+                            canvas.style.display = 'block';
+                            canvas.style.width = Math.min(size, 280) + 'px';
+                            canvas.style.height = Math.min(size, 280) + 'px';
+                            document.getElementById('dl-qr-btn').style.display = 'flex';
+                            showToast('QR Code generated!', 'success');
+                        };
+                        image.src = img.src || img.toDataURL();
+                    }
+                }, 100);
+            } catch (e) {
+                showToast('Failed to generate QR, try different text.', 'error');
+            }
+        }
+
+        function downloadQR() {
+            const canvas = document.getElementById('qr-canvas');
+            const link = document.createElement('a');
+            link.download = 'qr-code.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+            showToast('QR Code downloaded!', 'success');
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <meta name="description"
+        content="Download YouTube video thumbnails in max resolution, HD, SD, and more. Just paste the video URL." />
+    <title>YouTube Thumbnail Downloader – ToolKit Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="../style.css" />
+    <style>
+        .thumb-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .thumb-card {
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+            transition: all var(--transition);
+        }
+
+        .thumb-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-sm);
+            border-color: var(--border-hover);
+        }
+
+        .thumb-card img {
+            width: 100%;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+            display: block;
+            background: var(--bg-2);
+        }
+
+        .thumb-card-footer {
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .thumb-label {
+            font-size: .78rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: .08em;
+        }
+
+        .thumb-dl-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            background: rgba(108, 99, 255, .15);
+            border: 1px solid rgba(108, 99, 255, .25);
+            border-radius: var(--radius-sm);
+            font-size: .78rem;
+            font-weight: 600;
+            color: var(--primary);
+            cursor: pointer;
+            transition: all var(--transition);
+        }
+
+        .thumb-dl-btn:hover {
+            background: rgba(108, 99, 255, .25);
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="particles-canvas"></canvas>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="../index.html" class="logo"><span class="logo-icon">⚡</span><span class="logo-text">ToolKit <span
+                        class="accent">Pro</span></span></a>
+            <div class="nav-center">
+                <div class="search-bar" id="search-bar"><span class="search-icon">🔍</span><input type="text"
+                        id="search-input" placeholder="Search tools..." autocomplete="off" />
+                    <div class="search-results" id="search-results"></div>
+                </div>
+            </div>
+            <div class="nav-right"><button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme"><span
+                        class="theme-icon">🌙</span></button><button class="nav-mobile-toggle"
+                    id="mobile-menu-btn">☰</button></div>
+        </div>
+    </nav>
+
+    <div class="tool-page-wrap">
+        <a href="../index.html" class="back-link">← Back to All Tools</a>
+        <div class="tool-page-hero">
+            <div class="tool-page-icon">🖼️</div>
+            <h1 class="tool-page-title gradient-text">YT Thumbnail Downloader</h1>
+            <p class="tool-page-sub">Paste a YouTube video link and instantly download its thumbnail in multiple
+                resolutions.</p>
+        </div>
+        <div class="tool-page-body">
+            <div class="tool-box">
+                <div class="form-group">
+                    <label class="form-label" for="yt-thumb-url">YouTube Video URL</label>
+                    <input class="form-input" type="url" id="yt-thumb-url"
+                        placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ" />
+                </div>
+                <button class="btn btn-primary btn-glow" onclick="getThumbnails()"
+                    style="width:100%;justify-content:center;">
+                    🖼️ Get Thumbnails
+                </button>
+                <div class="thumb-grid" id="thumb-grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+    <script src="../script.js"></script>
+    <script>
+        function getVideoId(url) {
+            try {
+                const u = new URL(url);
+                if (u.hostname.includes('youtu.be')) return u.pathname.slice(1).split('?')[0];
+                if (u.searchParams.get('v')) return u.searchParams.get('v');
+                if (u.pathname.startsWith('/shorts/')) return u.pathname.replace('/shorts/', '');
+                if (u.pathname.startsWith('/embed/')) return u.pathname.replace('/embed/', '');
+            } catch { }
+            const m = url.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{11})/);
+            return m ? m[1] : null;
+        }
+
+        const RESOLUTIONS = [
+            { label: 'Max Resolution', key: 'maxresdefault', size: '1280×720' },
+            { label: 'HD (SD)', key: 'sddefault', size: '640×480' },
+            { label: 'High Quality', key: 'hqdefault', size: '480×360' },
+            { label: 'Medium Quality', key: 'mqdefault', size: '320×180' },
+            { label: 'Default', key: 'default', size: '120×90' },
+        ];
+
+        function getThumbnails() {
+            const url = document.getElementById('yt-thumb-url').value.trim();
+            const videoId = getVideoId(url);
+            if (!videoId) { showToast('Please enter a valid YouTube URL.', 'error'); return; }
+
+            const grid = document.getElementById('thumb-grid');
+            grid.innerHTML = '';
+
+            RESOLUTIONS.forEach(res => {
+                const imgUrl = `https://img.youtube.com/vi/${videoId}/${res.key}.jpg`;
+                const card = document.createElement('div');
+                card.className = 'thumb-card';
+                card.innerHTML = `
+      <img src="${imgUrl}" alt="${res.label}" loading="lazy" onerror="this.closest('.thumb-card').style.display='none'"/>
+      <div class="thumb-card-footer">
+        <div>
+          <div class="thumb-label">${res.label}</div>
+          <div style="font-size:.72rem;color:var(--text-muted);margin-top:2px;">${res.size}</div>
+        </div>
+        <a href="${imgUrl}" download="thumbnail-${res.key}.jpg" target="_blank" class="thumb-dl-btn">⬇️ Save</a>
+      </div>
+    `;
+                grid.appendChild(card);
+            });
+            showToast('Thumbnails loaded! Click "Save" to download.', 'success');
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <meta name="description" content="Convert images (JPG, PNG, WEBP) to a single PDF document instantly." />
+    <title>Image to PDF Converter – ToolKit Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="../style.css" />
+    <style>
+        .badge-client {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            padding: 4px 10px;
+            background: rgba(16, 185, 129, .12);
+            border: 1px solid rgba(16, 185, 129, .3);
+            border-radius: 40px;
+            color: var(--success);
+            margin-bottom: 16px;
+        }
+
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 16px;
+            background: var(--bg-glass);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-size: .85rem;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
+        }
+
+        .step-indicator .step-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--border);
+            flex-shrink: 0;
+        }
+
+        .step-indicator.active .step-dot {
+            background: var(--primary);
+            animation: pulseDot .8s ease infinite;
+        }
+
+        .step-indicator.done .step-dot {
+            background: var(--success);
+        }
+
+        .step-indicator.active {
+            border-color: rgba(108, 99, 255, .3);
+            color: var(--text-primary);
+        }
+
+        .step-indicator.done {
+            border-color: rgba(16, 185, 129, .25);
+            color: var(--success);
+        }
+
+        @keyframes pulseDot {
+
+            0%,
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.4);
+                opacity: .7;
+            }
+        }
+
+        /* Grid for images */
+        .img-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 12px;
+            margin-top: 16px;
+            display: none;
+        }
+
+        .img-grid.show {
+            display: grid;
+        }
+
+        .img-card {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 1;
+            background: var(--border);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            cursor: grab;
+            user-select: none;
+            border: 2px solid transparent;
+            transition: border-color 0.2s ease;
+        }
+
+        .img-card:active {
+            cursor: grabbing;
+            border-color: var(--primary);
+        }
+
+        .img-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .img-card .remove-btn {
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            border: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .img-card .remove-btn:hover {
+            background: #ff4444;
+        }
+
+        .img-card .page-num {
+            position: absolute;
+            bottom: 4px;
+            left: 4px;
+            background: rgba(0, 0, 0, 0.6);
+            color: #fff;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .settings-panel {
+            display: none;
+            background: var(--bg-glass);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 16px;
+            margin-top: 16px;
+            gap: 12px;
+            flex-direction: column;
+        }
+
+        .settings-panel.show {
+            display: flex;
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .setting-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .setting-select {
+            flex: 1;
+            min-width: 120px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-primary);
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+        }
+
+        .success-banner {
+            display: none;
+            align-items: center;
+            gap: 14px;
+            padding: 18px 20px;
+            background: rgba(16, 185, 129, .08);
+            border: 1px solid rgba(16, 185, 129, .25);
+            border-radius: var(--radius-lg);
+            margin-top: 16px;
+        }
+
+        .success-banner.show {
+            display: flex;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="particles-canvas"></canvas>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="../index.html" class="logo"><span class="logo-icon">⚡</span><span class="logo-text">ToolKit <span
+                        class="accent">Pro</span></span></a>
+            <div class="nav-center">
+                <div class="search-bar" id="search-bar"><span class="search-icon">🔍</span><input type="text"
+                        id="search-input" placeholder="Search tools..." autocomplete="off" />
+                    <div class="search-results" id="search-results"></div>
+                </div>
+            </div>
+            <div class="nav-right"><button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme"><span
+                        class="theme-icon">🌙</span></button><button class="nav-mobile-toggle"
+                    id="mobile-menu-btn">☰</button></div>
+        </div>
+    </nav>
+    <div class="tool-page-wrap">
+        <a href="../index.html" class="back-link">← Back to All Tools</a>
+        <div class="tool-page-hero">
+            <div class="tool-page-icon">📸</div>
+            <h1 class="tool-page-title gradient-text">Image to PDF</h1>
+            <p class="tool-page-sub">Upload JPG, PNG, or WEBP images and convert them into a single PDF document
+                instantly.</p>
+        </div>
+
+        <div class="tool-page-body">
+            <div class="tool-box">
+                <span class="badge-client">🔒 100% In-Browser · jsPDF</span>
+
+                <div class="dropzone" id="dropzone" onclick="document.getElementById('img-input').click()">
+                    <input type="file" id="img-input" accept="image/jpeg,image/png,image/webp" style="display:none"
+                        multiple onchange="handleFiles(this.files)" />
+                    <div class="dropzone-icon">📸</div>
+                    <div class="dropzone-title" id="drop-title">Drop images here</div>
+                    <div class="dropzone-sub">JPG, PNG, WEBP · Select multiple · Drag to reorder</div>
+                </div>
+
+                <div class="img-grid" id="img-grid"></div>
+
+                <div class="settings-panel" id="settings-panel">
+                    <div class="setting-row">
+                        <span class="setting-label">Page Size:</span>
+                        <select class="setting-select" id="page-size">
+                            <option value="a4">A4 (Standard)</option>
+                            <option value="letter">US Letter</option>
+                            <option value="auto">Auto (Fit Image)</option>
+                        </select>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">Orientation:</span>
+                        <select class="setting-select" id="page-orientation">
+                            <option value="p">Portrait</option>
+                            <option value="l">Landscape</option>
+                            <option value="auto">Auto (per image)</option>
+                        </select>
+                    </div>
+                    <div class="setting-row">
+                        <span class="setting-label">Margin:</span>
+                        <select class="setting-select" id="page-margin">
+                            <option value="0">No Margin (Full page)</option>
+                            <option value="10">Small (10mm)</option>
+                            <option value="20">Large (20mm)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button class="btn btn-primary btn-glow" id="convert-btn" onclick="convertToPdf()"
+                    style="width:100%;justify-content:center;margin-top:16px;display:none;">
+                    ⚡ Convert to PDF
+                </button>
+
+                <!-- Steps -->
+                <div id="steps-wrap" style="display:none;flex-direction:column;margin-top:16px;">
+                    <div class="step-indicator" id="step1">
+                        <div class="step-dot"></div><span>Reading images…</span>
+                    </div>
+                    <div class="step-indicator" id="step2">
+                        <div class="step-dot"></div><span id="step2-text">Processing pages…</span>
+                    </div>
+                    <div class="step-indicator" id="step3">
+                        <div class="step-dot"></div><span>Generating PDF…</span>
+                    </div>
+                </div>
+                <div class="progress-bar-wrap" id="prog-wrap">
+                    <div class="progress-bar-fill" id="prog-fill" style="width:0%"></div>
+                </div>
+
+                <!-- Success -->
+                <div class="success-banner" id="success-banner">
+                    <span style="font-size:2rem;">✅</span>
+                    <div style="flex:1;">
+                        <div style="font-weight:700;font-size:.95rem;">PDF created successfully!</div>
+                        <div style="font-size:.82rem;color:var(--text-secondary);" id="success-filename">—</div>
+                    </div>
+                    <button class="btn btn-primary" onclick="resetTool()" style="padding:10px 18px;">Convert
+                        Another</button>
+                    <!-- Actual download handled directly by jsPDF via triggerDownload -->
+                </div>
+
+                <button class="btn btn-primary btn-glow" id="download-btn" onclick="triggerDownload()"
+                    style="width:100%;justify-content:center;margin-top:16px;display:none;background:var(--success)">
+                    ⬇️ Download PDF
+                </button>
+            </div>
+
+            <div
+                style="margin-top:28px;padding:20px 24px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);">
+                <h3 style="font-size:.95rem;font-weight:700;margin-bottom:12px;">⚙️ How it works</h3>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;text-align:center;">
+                    <div>
+                        <div style="font-size:1.5rem;margin-bottom:6px;">📸</div>
+                        <div style="font-size:.8rem;font-weight:600;margin-bottom:4px;">Upload Images</div>
+                        <div style="font-size:.75rem;color:var(--text-secondary);">Multiple formats supported</div>
+                    </div>
+                    <div>
+                        <div style="font-size:1.5rem;margin-bottom:6px;">🖱️</div>
+                        <div style="font-size:.8rem;font-weight:600;margin-bottom:4px;">Reorder & Ajust</div>
+                        <div style="font-size:.75rem;color:var(--text-secondary);">Drag to order, set margins</div>
+                    </div>
+                    <div>
+                        <div style="font-size:1.5rem;margin-bottom:6px;">⬇️</div>
+                        <div style="font-size:.8rem;font-weight:600;margin-bottom:4px;">Download PDF</div>
+                        <div style="font-size:.75rem;color:var(--text-secondary);">Combined & optimized instantly</div>
+                    </div>
+                </div>
+                <style>
+                    @media(max-width:500px) {
+                        div.tool-page-body>div:last-child>div:last-child {
+                            grid-template-columns: 1fr !important;
+                        }
+                    }
+                </style>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="../script.js"></script>
+    <script>
+        let imagesList = []; // Array of objects: { id, file, dataUrl }
+        let jspdfLoaded = false;
+        let pdfBlob = null;
+        let pdfFilename = "images.pdf";
+
+        initDropzone(document.getElementById('dropzone'), f => {
+            // dropzone only gives 1 file via handleFile, so we patch it
+        });
+
+        // Patch drag events for multiple files
+        const dz = document.getElementById('dropzone');
+        dz.ondrop = (e) => {
+            e.preventDefault(); dz.classList.remove('dragover');
+            if (e.dataTransfer.files.length) handleFiles(e.dataTransfer.files);
+        };
+
+        async function handleFiles(files) {
+            if (!files || files.length === 0) return;
+            let addedCount = 0;
+
+            // Maximum total file size warning (for performance)
+            let totalSize = imagesList.reduce((acc, img) => acc + img.file.size, 0);
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (!file.type.startsWith('image/')) continue;
+                if (file.size > 50 * 1024 * 1024) continue; // Skip single files > 50mb
+                if (totalSize + file.size > 150 * 1024 * 1024) {
+                    showToast('Max total capacity reached. Skipping remaining.', 'error');
+                    break;
+                }
+
+                totalSize += file.size;
+
+                // Read image to dataURL
+                const dataUrl = await new Promise(res => {
+                    const reader = new FileReader();
+                    reader.onload = e => res(e.target.result);
+                    reader.readAsDataURL(file);
+                });
+
+                imagesList.push({ id: Date.now() + Math.random(), file, dataUrl });
+                addedCount++;
+            }
+
+            if (addedCount > 0) {
+                renderGrid();
+                document.getElementById('settings-panel').classList.add('show');
+                document.getElementById('convert-btn').style.display = 'flex';
+                document.getElementById('drop-title').textContent = 'Add more images';
+                pdfBlob = null;
+                document.getElementById('download-btn').style.display = 'none';
+                document.getElementById('success-banner').classList.remove('show');
+            } else {
+                showToast('No valid images added.', 'error');
+            }
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('img-grid');
+            grid.innerHTML = '';
+            if (imagesList.length === 0) {
+                grid.classList.remove('show');
+                document.getElementById('settings-panel').classList.remove('show');
+                document.getElementById('convert-btn').style.display = 'none';
+                document.getElementById('drop-title').textContent = 'Drop images here';
+                return;
+            }
+
+            grid.classList.add('show');
+            imagesList.forEach((img, index) => {
+                const el = document.createElement('div');
+                el.className = 'img-card';
+                el.draggable = true;
+                el.dataset.id = img.id;
+
+                el.innerHTML = `
+                    <img src="${img.dataUrl}" alt="page-${index + 1}" draggable="false" />
+                    <button class="remove-btn" onclick="removeImg('${img.id}', event)">✕</button>
+                    <div class="page-num">${index + 1}</div>
+                `;
+
+                // Drag & Drop logic for reordering
+                el.addEventListener('dragstart', e => {
+                    e.dataTransfer.setData('text/plain', index);
+                    setTimeout(() => el.style.opacity = '0.4', 0);
+                });
+                el.addEventListener('dragend', () => el.style.opacity = '1');
+                el.addEventListener('dragover', e => e.preventDefault());
+                el.addEventListener('drop', e => {
+                    e.preventDefault();
+                    const fromIdx = parseInt(e.dataTransfer.getData('text/plain'));
+                    const toIdx = index;
+                    if (fromIdx === toIdx || isNaN(fromIdx)) return;
+
+                    // Swap in array
+                    const item = imagesList.splice(fromIdx, 1)[0];
+                    imagesList.splice(toIdx, 0, item);
+                    renderGrid();
+                });
+
+                grid.appendChild(el);
+            });
+        }
+
+        function removeImg(id, e) {
+            e.stopPropagation();
+            imagesList = imagesList.filter(img => img.id != id);
+            renderGrid();
+        }
+
+        function loadScript(src) {
+            return new Promise((resolve, reject) => {
+                if (document.querySelector(`script[src="${src}"]`)) { resolve(); return; }
+                const s = document.createElement('script');
+                s.src = src; s.onload = resolve; s.onerror = () => reject(new Error('Failed to load: ' + src));
+                document.head.appendChild(s);
+            });
+        }
+
+        async function convertToPdf() {
+            if (imagesList.length === 0) return;
+
+            const btn = document.getElementById('convert-btn');
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+            btn.style.display = 'none';
+            document.getElementById('steps-wrap').style.display = 'flex';
+            document.getElementById('prog-wrap').classList.add('active');
+            document.getElementById('success-banner').classList.remove('show');
+            document.getElementById('download-btn').style.display = 'none';
+
+            try {
+                setStep(1, 'active'); setProgress(15);
+
+                if (!jspdfLoaded) {
+                    await loadScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');
+                    jspdfLoaded = true;
+                }
+
+                const { jsPDF } = window.jspdf;
+                setStep(1, 'done'); setStep(2, 'active'); setProgress(30);
+
+                const targetSize = document.getElementById('page-size').value; // a4, letter, auto
+                const targetOrient = document.getElementById('page-orientation').value; // p, l, auto
+                const margin = parseInt(document.getElementById('page-margin').value); // 0, 10, 20 mm
+
+                let pdf = null;
+
+                for (let i = 0; i < imagesList.length; i++) {
+                    const imgObj = imagesList[i];
+                    document.getElementById('step2-text').textContent = `Processing page ${i + 1} of ${imagesList.length}…`;
+
+                    // Load into Image to get natural dimensions
+                    const img = new Image();
+                    await new Promise(res => { img.onload = res; img.src = imgObj.dataUrl; });
+
+                    // Compress using canvas if extremely large, else use raw to avoid artifacting
+                    let renderUrl = imgObj.dataUrl;
+                    let imgFormat = renderUrl.substring("data:image/".length, renderUrl.indexOf(";")).toUpperCase();
+                    if (imgFormat === 'JPEG') imgFormat = 'JPEG';
+                    else if (imgFormat === 'PNG') imgFormat = 'PNG';
+                    else imgFormat = 'JPEG'; // Fallback for WEBP
+
+                    if (img.width > 2500 || img.height > 2500 || imgFormat === 'WEBP') {
+                        const maxD = 2000;
+                        let w = img.width, h = img.height;
+                        if (w > h && w > maxD) { h *= maxD / w; w = maxD; }
+                        else if (h > maxD) { w *= maxD / h; h = maxD; }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = w; canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, w, h);
+                        renderUrl = canvas.toDataURL('image/jpeg', 0.85);
+                        imgFormat = 'JPEG';
+                    }
+
+                    // Calculate page dimensions based on settings
+                    let pageFormat = targetSize === 'auto' ? [img.width * 0.264583, img.height * 0.264583] : targetSize; // px to mm approx
+                    let pageOrient = targetOrient;
+
+                    if (targetOrient === 'auto') {
+                        if (targetSize === 'auto') {
+                            pageOrient = img.width > img.height ? 'l' : 'p';
+                        } else {
+                            // Standard page formats (A4/Letter) default to Portrait unless auto detects otherwise
+                            pageOrient = img.width > img.height ? 'l' : 'p';
+                        }
+                    }
+
+                    if (i === 0) {
+                        pdf = new jsPDF({ orientation: pageOrient, format: pageFormat, unit: 'mm' });
+                    } else {
+                        pdf.addPage(pageFormat, pageOrient);
+                    }
+
+                    // Calculate rendering size
+                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    const pageHeight = pdf.internal.pageSize.getHeight();
+
+                    const usableWidth = pageWidth - margin * 2;
+                    const usableHeight = pageHeight - margin * 2;
+
+                    let finalW = usableWidth;
+                    let finalH = (img.height * finalW) / img.width;
+
+                    if (finalH > usableHeight) {
+                        finalH = usableHeight;
+                        finalW = (img.width * finalH) / img.height;
+                    }
+
+                    // Center the image
+                    const x = margin + (usableWidth - finalW) / 2;
+                    const y = margin + (usableHeight - finalH) / 2;
+
+                    pdf.addImage(renderUrl, imgFormat, x, y, finalW, finalH);
+                    setProgress(30 + Math.round(((i + 1) / imagesList.length) * 60));
+                }
+
+                setStep(2, 'done'); setStep(3, 'active'); setProgress(95);
+
+                pdfFilename = (imagesList.length === 1 ? imagesList[0].file.name.split('.')[0] : "merged_images") + ".pdf";
+                pdfBlob = pdf.output('blob');
+
+                setStep(3, 'done'); setProgress(100);
+
+                setTimeout(() => {
+                    document.getElementById('prog-wrap').classList.remove('active');
+                    document.getElementById('success-banner').classList.add('show');
+                    document.getElementById('success-filename').textContent = pdfFilename;
+                    document.getElementById('download-btn').style.display = 'flex';
+                    showToast('PDF ready to download! 🎉', 'success');
+                }, 400);
+
+            } catch (err) {
+                console.error('[Image→PDF]', err);
+                showToast('Conversion failed: ' + err.message, 'error');
+                const b = document.getElementById('convert-btn');
+                b.style.display = 'flex'; b.disabled = false; b.style.opacity = '1';
+                document.getElementById('steps-wrap').style.display = 'none';
+                document.getElementById('prog-wrap').classList.remove('active');
+                resetSteps(); setProgress(0);
+            }
+        }
+
+        function triggerDownload() {
+            if (!pdfBlob) return;
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(pdfBlob);
+            link.download = pdfFilename;
+            link.click();
+        }
+
+        function resetTool() {
+            imagesList = [];
+            renderGrid();
+            document.getElementById('convert-btn').disabled = false;
+            document.getElementById('convert-btn').style.opacity = '1';
+            document.getElementById('steps-wrap').style.display = 'none';
+            document.getElementById('prog-wrap').classList.remove('active');
+            document.getElementById('success-banner').classList.remove('show');
+            document.getElementById('download-btn').style.display = 'none';
+            document.getElementById('img-input').value = '';
+            resetSteps(); setProgress(0);
+        }
+
+        function setStep(n, s) { document.getElementById('step' + n).className = 'step-indicator ' + s; }
+        function resetSteps() { [1, 2, 3].forEach(n => setStep(n, '')); document.getElementById('step2-text').textContent = 'Processing pages…'; }
+        function setProgress(p) { document.getElementById('prog-fill').style.width = p + '%'; }
+        function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+    </script>
+</body>
+
+</html>

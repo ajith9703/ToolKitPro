@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <meta name="description"
+        content="Compress images online for free. Reduce JPEG, PNG file size without losing quality. No upload needed." />
+    <title>Image Compressor – ToolKit Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet" />
+    <link rel="stylesheet" href="../style.css" />
+    <style>
+        .preview-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .preview-box {
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            border: 1px solid var(--border);
+            background: var(--bg-card);
+        }
+
+        .preview-box img {
+            width: 100%;
+            display: block;
+            max-height: 280px;
+            object-fit: contain;
+            background: repeating-conic-gradient(#44444422 0% 25%, transparent 0% 50%) 0 0/20px 20px;
+        }
+
+        .preview-label {
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .preview-title {
+            font-size: .82rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: .05em;
+        }
+
+        .preview-size {
+            font-size: .88rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .quality-slider {
+            width: 100%;
+            accent-color: var(--primary);
+            height: 6px;
+            cursor: pointer;
+        }
+
+        @media(max-width:600px) {
+            .preview-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="particles-canvas"></canvas>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="../index.html" class="logo"><span class="logo-icon">⚡</span><span class="logo-text">ToolKit <span
+                        class="accent">Pro</span></span></a>
+            <div class="nav-center">
+                <div class="search-bar" id="search-bar"><span class="search-icon">🔍</span><input type="text"
+                        id="search-input" placeholder="Search tools..." autocomplete="off" />
+                    <div class="search-results" id="search-results"></div>
+                </div>
+            </div>
+            <div class="nav-right"><button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme"><span
+                        class="theme-icon">🌙</span></button><button class="nav-mobile-toggle"
+                    id="mobile-menu-btn">☰</button></div>
+        </div>
+    </nav>
+
+    <div class="tool-page-wrap">
+        <a href="../index.html" class="back-link">← Back to All Tools</a>
+        <div class="tool-page-hero">
+            <div class="tool-page-icon">🖼️</div>
+            <h1 class="tool-page-title gradient-text">Image Compressor</h1>
+            <p class="tool-page-sub">Compress JPEG, PNG and WebP images right in your browser. Fast, private, and 100%
+                free.</p>
+        </div>
+        <div class="tool-page-body">
+            <div class="tool-box">
+                <!-- Dropzone -->
+                <div class="dropzone" id="dropzone" onclick="document.getElementById('img-input').click()">
+                    <input type="file" id="img-input" accept="image/*" style="display:none"
+                        onchange="handleImage(this.files[0])" />
+                    <div class="dropzone-icon">📁</div>
+                    <div class="dropzone-title">Drop your image here</div>
+                    <div class="dropzone-sub">Supports JPEG, PNG, WebP · Click or drag to upload</div>
+                </div>
+
+                <!-- Quality Slider -->
+                <div class="form-group" id="quality-group" style="display:none;margin-top:24px;">
+                    <label class="form-label">Compression Quality: <span id="quality-val">75</span>%</label>
+                    <input type="range" class="quality-slider" id="quality-slider" min="10" max="100" value="75"
+                        oninput="updateQuality(this.value)" />
+                </div>
+
+                <div class="progress-bar-wrap" id="comp-progress">
+                    <div class="progress-bar-fill" id="comp-fill" style="width:0%"></div>
+                </div>
+
+                <!-- Preview Row -->
+                <div class="preview-row" id="preview-row" style="display:none">
+                    <div class="preview-box">
+                        <img id="orig-preview" src="" alt="Original" />
+                        <div class="preview-label"><span class="preview-title">Original</span><span class="preview-size"
+                                id="orig-size">—</span></div>
+                    </div>
+                    <div class="preview-box">
+                        <img id="comp-preview" src="" alt="Compressed" />
+                        <div class="preview-label"><span class="preview-title">Compressed</span><span
+                                class="preview-size" id="comp-size">—</span></div>
+                    </div>
+                </div>
+
+                <div id="comp-actions" style="display:none;margin-top:20px;display:none;gap:12px;flex-wrap:wrap;">
+                    <button class="btn btn-primary btn-glow" id="comp-btn" onclick="compressImage()"
+                        style="flex:1;justify-content:center;">⚡ Compress</button>
+                    <button class="btn btn-ghost" id="dl-btn" onclick="downloadCompressed()"
+                        style="flex:1;justify-content:center;display:none;">⬇️ Download</button>
+                </div>
+                <div id="savings-badge"
+                    style="display:none;margin-top:16px;text-align:center;padding:12px;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);border-radius:var(--radius-md);font-weight:700;color:#10b981;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+    <script src="../script.js"></script>
+    <script>
+        let origFile = null, compressedBlob = null, origImg = null;
+
+        initDropzone(document.getElementById('dropzone'), handleImage);
+
+        function handleImage(file) {
+            if (!file || !file.type.startsWith('image/')) { showToast('Please select a valid image file.', 'error'); return; }
+            origFile = file;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                origImg = new Image();
+                origImg.onload = () => {
+                    document.getElementById('orig-preview').src = e.target.result;
+                    document.getElementById('orig-size').textContent = formatSize(file.size);
+                    document.getElementById('preview-row').style.display = 'grid';
+                    document.getElementById('quality-group').style.display = 'block';
+                    document.getElementById('comp-actions').style.display = 'flex';
+                    compressImage();
+                };
+                origImg.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function updateQuality(val) {
+            document.getElementById('quality-val').textContent = val;
+            if (origImg) compressImage();
+        }
+
+        function compressImage() {
+            if (!origImg) return;
+            const quality = parseInt(document.getElementById('quality-slider').value) / 100;
+            const progress = document.getElementById('comp-progress');
+            const fill = document.getElementById('comp-fill');
+            progress.classList.add('active'); fill.style.width = '0%';
+
+            const canvas = document.createElement('canvas');
+            canvas.width = origImg.width; canvas.height = origImg.height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(origImg, 0, 0);
+
+            let w = 0;
+            const iv = setInterval(() => { w = Math.min(w + 20, 95); fill.style.width = w + '%'; }, 30);
+
+            canvas.toBlob(blob => {
+                clearInterval(iv); fill.style.width = '100%';
+                setTimeout(() => progress.classList.remove('active'), 400);
+                compressedBlob = blob;
+                const compURL = URL.createObjectURL(blob);
+                document.getElementById('comp-preview').src = compURL;
+                document.getElementById('comp-size').textContent = formatSize(blob.size);
+                document.getElementById('dl-btn').style.display = 'flex';
+
+                const saved = origFile.size - blob.size;
+                const pct = ((saved / origFile.size) * 100).toFixed(1);
+                const badge = document.getElementById('savings-badge');
+                if (saved > 0) {
+                    badge.textContent = `🎉 Saved ${formatSize(saved)} — ${pct}% smaller!`;
+                    badge.style.display = 'block';
+                } else {
+                    badge.textContent = `⚠️ Try lower quality for better compression.`;
+                    badge.style.background = 'rgba(245,158,11,.1)';
+                    badge.style.borderColor = 'rgba(245,158,11,.25)';
+                    badge.style.color = '#f59e0b';
+                    badge.style.display = 'block';
+                }
+                showToast('Image compressed successfully!', 'success');
+            }, 'image/jpeg', quality);
+        }
+
+        function downloadCompressed() {
+            if (!compressedBlob) return;
+            const name = (origFile.name.replace(/\.[^.]+$/, '') || 'image') + '-compressed.jpg';
+            downloadBlob(compressedBlob, name);
+            showToast('Download started!', 'success');
+        }
+
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+    </script>
+</body>
+
+</html>

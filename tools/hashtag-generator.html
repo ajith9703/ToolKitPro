@@ -11,6 +11,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
         rel="stylesheet" />
     <link rel="stylesheet" href="../style.css" />
+    <script src="https://pl28858032.effectivegatecpm.com/a0/e2/ac/a0e2ac0c91ec8d62fd161ee7095bbb0a.js"></script>
 </head>
 
 <body>
@@ -61,7 +62,7 @@
                             id="plat-tt" onclick="selectPlatform('tt')">🎵 TikTok</label>
                     </div>
                 </div>
-                <button class="btn btn-primary btn-glow" onclick="genHashtags()"
+                <button class="btn btn-primary btn-glow" onclick="openSmartlink(event, 'genHashtags()')"
                     style="width:100%;justify-content:center;"># Generate Hashtags</button>
 
                 <div id="hash-result" style="display:none;margin-top:24px;">
@@ -69,7 +70,7 @@
                         <span style="font-size:.85rem;font-weight:600;color:var(--text-secondary);" id="hash-count">0
                             hashtags</span>
                         <div style="display:flex;gap:8px;">
-                            <button class="copy-btn" onclick="copyAllHashtags()" id="copy-all-btn">📋 Copy All</button>
+                            <button class="copy-btn" onclick="openSmartlink(event, 'copyAllHashtags()')" id="copy-all-btn">📋 Copy All</button>
                         </div>
                     </div>
                     <div class="hashtag-list" id="hashtag-list"></div>
